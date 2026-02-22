@@ -1,0 +1,17 @@
+# Document Extraction Service Dependencies
+# Open Source PDF Processing - No LLM Required
+
+# PDF Processing
+PyMuPDF
+pdfplumber
+
+# Web Framework
+Flask
+flask-cors
+werkzeug
+
+# Data Validation
+pydantic
+
+# Optional: Additional PDF backends
+# unstructured  # For complex layouts (requires additional system dependencies)

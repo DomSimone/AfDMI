@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generic PDF Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .columns-config {
+            margin-top: 20px;
+        }
+
+        .column-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .column-item input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .column-item select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 120px;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .btn-add:hover {
+            background: #218838;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-section.dragover {
+            border-color: #764ba2;
+            background: #e8e8ff;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-name {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .success.active {
+            display: block;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 1.8em;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Generic PDF Parser</h1>
+            <p>Extract and parse any section from PDF documents with custom column definitions</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" data-tab="parse">Parse PDF</button>
+                <button class="tab" data-tab="convert">Convert PDF</button>
+            </div>
+
+            <!-- Parse Tab -->
+            <div class="tab-content active" id="parseTab">
+                <div class="config-section">
+                    <h3>📋 Parsing Configuration</h3>
+                    
+                    <div class="form-group">
+                        <label for="sectionPrompt">Section to Extract (e.g., "REFERENCES", "ABSTRACT", "METHODOLOGY")</label>
+                        <input type="text" id="sectionPrompt" placeholder="Leave empty to parse entire document">
+                        <small>Enter the section name you want to extract. Leave empty to parse the entire document.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Column Definitions</label>
+                        <small>Define columns to extract from the parsed section. Each column can have a name, extraction pattern (regex), and type.</small>
+                        
+                        <div id="columnsList" class="columns-config">
+                            <div class="column-item">
+                                <input type="text" placeholder="Column Name (e.g., Author Name)" class="col-name">
+                                <input type="text" placeholder="Pattern (regex, optional)" class="col-pattern">
+                                <select class="col-type">
+                                    <option value="text">Text</option>
+                                    <option value="name">Name</option>
+                                    <option value="title">Title</option>
+                                    <option value="date">Date</option>
+                                    <option value="institution">Institution</option>
+                                </select>
+                                <button class="btn-remove" onclick="removeColumn(this)">Remove</button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-add" onclick="addColumn()">+ Add Column</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useAiCheckbox">
+                            Use AI-assisted parsing (requires API key on the server)
+                        </label>
+                        <small>
+                            When enabled, the server will call an AI model (e.g., a fine-tuned OpenAI model) to interpret the section
+                            and map it into your columns, then fall back to rule-based parsing if the AI fails.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aiInstructions">AI Parsing Instructions (optional)</label>
+                        <textarea id="aiInstructions" rows="3" placeholder="E.g., 'Each row is a reference. Map authors, title, year, and publisher as accurately as possible.'"></textarea>
+                        <small>Additional natural-language guidance that will be sent to the AI model to improve parsing accuracy.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="engineSelect">Parsing Engine</label>
+                        <select id="engineSelect" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 1em;">
+                            <option value="rule">Rule-based (local)</option>
+                            <option value="ai">AI (OpenAI-compatible)</option>
+                            <option value="unstract">Unstract (API Deployment)</option>
+                        </select>
+                        <small>
+                            - Rule-based: uses local heuristics/regex<br>
+                            - AI: calls your configured AI endpoint<br>
+                            - Unstract: uploads the PDF to your Unstract API Deployment and uses its structured JSON output
+                        </small>
+                    </div>
+                </div>
+
+                <div class="upload-section" id="uploadSection">
+                    <h3 style="margin-bottom: 20px; color: #333;">Upload PDF Document</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".pdf" />
+                        <label for="fileInput" class="file-input-label">Choose PDF File</label>
+                    </div>
+                    <div class="file-name" id="fileName"></div>
+                    <button class="btn" id="parseBtn" disabled>Parse PDF</button>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing PDF and extracting data...</p>
+                </div>
+
+                <div class="error" id="error"></div>
+                <div class="success" id="success"></div>
+
+                <div class="results-section" id="resultsSection">
+                    <div class="results-header">
+                        <h2>Extracted Data</h2>
+                        <div class="results-count" id="resultsCount"></div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="resultsTable">
+                            <thead id="tableHead">
+                            </thead>
+                            <tbody id="resultsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn" id="downloadBtn">Download CSV</button>
+                        <button class="btn btn-secondary" id="resetBtn">Upload Another File</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Convert Tab -->
+            <div class="tab-content" id="convertTab">
+                <div class="upload-section">
+                    <h3 style="margin-bottom: 20px; color: #333;">Convert PDF</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="convertFileInput" accept=".pdf" />
+                        <label for="convertFileInput" class="file-input-label">Choose PDF File</label>
+                    </div>
+                    <div class="file-name" id="convertFileName"></div>
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="convertToImagesBtn" disabled>Convert to Images</button>
+                        <button class="btn btn-success" id="convertToDocxBtn" disabled>Convert to DOCX</button>
+                    </div>
+                </div>
+
+                <div class="loading" id="convertLoading">
+                    <div class="spinner"></div>
+                    <p id="convertLoadingText">Converting PDF...</p>
+                </div>
+
+                <div class="error" id="convertError"></div>
+                <div class="success" id="convertSuccess"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tabName + 'Tab').classList.add('active');
+            });
+        });
+
+        // Column management
+        function addColumn() {
+            const columnsList = document.getElementById('columnsList');
+            const newColumn = document.createElement('div');
+            newColumn.className = 'column-item';
+            newColumn.innerHTML = `
+                <input type="text" placeholder="Column Name (e.g., Author Name)" class="col-name">
+                <input type="text" placeholder="Pattern (regex, optional)" class="col-pattern">
+                <select class="col-type">
+                    <option value="text">Text</option>
+                    <option value="name">Name</option>
+                    <option value="title">Title</option>
+                    <option value="date">Date</option>
+                    <option value="institution">Institution</option>
+                </select>
+                <button class="btn-remove" onclick="removeColumn(this)">Remove</button>
+            `;
+            columnsList.appendChild(newColumn);
+        }
+
+        function removeColumn(btn) {
+            if (document.querySelectorAll('.column-item').length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('You need at least one column definition');
+            }
+        }
+
+        // Parse functionality
+        const fileInput = document.getElementById('fileInput');
+        const parseBtn = document.getElementById('parseBtn');
+        const fileName = document.getElementById('fileName');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const success = document.getElementById('success');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsBody = document.getElementById('resultsBody');
+        const tableHead = document.getElementById('tableHead');
+        const resultsCount = document.getElementById('resultsCount');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const sectionPrompt = document.getElementById('sectionPrompt');
+        const useAiCheckbox = document.getElementById('useAiCheckbox');
+        const aiInstructions = document.getElementById('aiInstructions');
+        const engineSelect = document.getElementById('engineSelect');
+
+        let currentData = [];
+        let currentColumns = [];
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = `Selected: ${file.name}`;
+                parseBtn.disabled = false;
+            } else {
+                fileName.textContent = '';
+                parseBtn.disabled = true;
+            }
+        });
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = `Selected: ${file.name}`;
+                parseBtn.disabled = false;
+            } else {
+                showError('Please drop a PDF file');
+            }
+        });
+
+        parseBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Please select a PDF file');
+                return;
+            }
+
+            // Collect column definitions
+            const columnItems = document.querySelectorAll('.column-item');
+            const columnPrompts = [];
+            columnItems.forEach(item => {
+                const name = item.querySelector('.col-name').value.trim();
+                const pattern = item.querySelector('.col-pattern').value.trim();
+                const type = item.querySelector('.col-type').value;
+                
+                if (name) {
+                    columnPrompts.push({
+                        name: name,
+                        pattern: pattern || '',
+                        type: type
+                    });
+                }
+            });
+
+            if (columnPrompts.length === 0) {
+                showError('Please define at least one column');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('section_prompt', sectionPrompt.value.trim());
+            formData.append('column_prompts', JSON.stringify(columnPrompts));
+            formData.append('use_ai', useAiCheckbox.checked ? 'true' : 'false');
+            formData.append('ai_instructions', aiInstructions.value.trim());
+            formData.append('engine', engineSelect.value);
+
+            loading.classList.add('active');
+            error.classList.remove('active');
+            success.classList.remove('active');
+            resultsSection.classList.remove('active');
+            parseBtn.disabled = true;
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to process PDF');
+                }
+
+                currentData = data.data;
+                currentColumns = columnPrompts.map(c => c.name);
+                displayResults(data.data, currentColumns);
+                showSuccess(`Successfully extracted ${data.count} items!`);
+                
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.classList.remove('active');
+                parseBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data, columns) {
+            resultsBody.innerHTML = '';
+            tableHead.innerHTML = '';
+            resultsCount.textContent = `${data.length} item(s) found`;
+
+            // Create header
+            const headerRow = document.createElement('tr');
+            columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            // Create rows
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                columns.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = item[col] || '';
+                    row.appendChild(td);
+                });
+                resultsBody.appendChild(row);
+            });
+
+            resultsSection.classList.add('active');
+        }
+
+        downloadBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/download_csv', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: currentData,
+                        columns: currentColumns
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate CSV');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'parsed_data.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (err) {
+                showError('Failed to download CSV: ' + err.message);
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileName.textContent = '';
+            parseBtn.disabled = true;
+            resultsSection.classList.remove('active');
+            error.classList.remove('active');
+            success.classList.remove('active');
+            currentData = [];
+            currentColumns = [];
+        });
+
+        // Convert functionality
+        const convertFileInput = document.getElementById('convertFileInput');
+        const convertFileName = document.getElementById('convertFileName');
+        const convertToImagesBtn = document.getElementById('convertToImagesBtn');
+        const convertToDocxBtn = document.getElementById('convertToDocxBtn');
+        const convertLoading = document.getElementById('convertLoading');
+        const convertError = document.getElementById('convertError');
+        const convertSuccess = document.getElementById('convertSuccess');
+        const convertLoadingText = document.getElementById('convertLoadingText');
+
+        convertFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                convertFileName.textContent = `Selected: ${file.name}`;
+                convertToImagesBtn.disabled = false;
+                convertToDocxBtn.disabled = false;
+            } else {
+                convertFileName.textContent = '';
+                convertToImagesBtn.disabled = true;
+                convertToDocxBtn.disabled = true;
+            }
+        });
+
+        convertToImagesBtn.addEventListener('click', async () => {
+            await convertPDF('images');
+        });
+
+        convertToDocxBtn.addEventListener('click', async () => {
+            await convertPDF('docx');
+        });
+
+        async function convertPDF(type) {
+            const file = convertFileInput.files[0];
+            if (!file) {
+                showConvertError('Please select a PDF file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+
+            convertLoading.classList.add('active');
+            convertLoadingText.textContent = `Converting PDF to ${type.toUpperCase()}...`;
+            convertError.classList.remove('active');
+            convertSuccess.classList.remove('active');
+            convertToImagesBtn.disabled = true;
+            convertToDocxBtn.disabled = true;
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to convert PDF');
+                }
+
+                if (type === 'docx') {
+                    showConvertSuccess(`Successfully converted! <a href="/download_docx/${data.filename}" download>Download DOCX</a>`);
+                } else {
+                    showConvertSuccess(data.message);
+                }
+                
+            } catch (err) {
+                showConvertError(err.message);
+            } finally {
+                convertLoading.classList.remove('active');
+                convertToImagesBtn.disabled = false;
+                convertToDocxBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('active');
+            success.classList.remove('active');
+        }
+
+        function showSuccess(message) {
+            success.textContent = message;
+            success.classList.add('active');
+            error.classList.remove('active');
+        }
+
+        function showConvertError(message) {
+            convertError.textContent = message;
+            convertError.classList.add('active');
+            convertSuccess.classList.remove('active');
+        }
+
+        function showConvertSuccess(message) {
+            convertSuccess.innerHTML = message;
+            convertSuccess.classList.add('active');
+            convertError.classList.remove('active');
+        }
+    </script>
+</body>
+</html>

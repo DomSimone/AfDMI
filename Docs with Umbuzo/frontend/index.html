@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docs with Umbuzo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">◇</span>
+        <h1>Docs with Umbuzo</h1>
+        <span class="tagline">AI-Native Document Vision & Data Terminal</span>
+      </div>
+      <nav class="nav-tabs">
+        <button class="tab active" data-tab="documents">Document Processing</button>
+        <button class="tab" data-tab="terminal">Data Terminal</button>
+      </nav>
+    </header>
+
+    <main class="main">
+      <!-- Document Processing Panel -->
+      <section id="documents" class="panel active">
+        <div class="panel-grid">
+          <div class="card upload-card">
+            <h2>Document Ingestion</h2>
+            <p class="card-desc">Upload PDF or CSV files (up to 30 items)</p>
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="fileInput" multiple accept=".pdf,.csv" hidden>
+              <span class="dropzone-text">Drop files here or click to browse</span>
+              <span class="dropzone-count" id="fileCount">0 files selected</span>
+            </div>
+            <div class="file-list" id="fileList"></div>
+            <div class="doc-selector hidden" id="docSelector">
+              <label>Extract from:</label>
+              <select id="docSelect"></select>
+            </div>
+          </div>
+
+          <div class="card extract-card">
+            <h2>Structured Output Prompting</h2>
+            <p class="card-desc">Describe what data to extract (e.g., "Invoice Number, Date, Vendor Name")</p>
+            <textarea id="extractPrompt" placeholder="Enter extraction prompt...&#10;Example: Invoice Number, Date, Vendor Name, Total Amount"></textarea>
+            <div class="format-row">
+              <label>Output format:</label>
+              <select id="outputFormat">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+              </select>
+            </div>
+            <button class="btn primary" id="extractBtn">Extract Data</button>
+          </div>
+
+          <div class="card analog-card">
+            <h2>Analog Study Metadata</h2>
+            <p class="card-desc">Dedicated upload for CSV/PDF metadata from analog studies</p>
+            <div class="dropzone analog-dropzone" id="analogDropzone">
+              <input type="file" id="analogFileInput" multiple accept=".pdf,.csv" hidden>
+              <span class="dropzone-text">Drop metadata files here</span>
+              <span class="dropzone-count" id="analogFileCount">0 files</span>
+            </div>
+            <div class="analog-status" id="analogStatus"></div>
+          </div>
+        </div>
+
+        <div class="card output-card">
+          <h2>Extracted Output</h2>
+          <div class="output-actions">
+            <button class="btn small" id="copyOutput">Copy to Clipboard</button>
+            <button class="btn small" id="downloadOutput">Download</button>
+          </div>
+          <pre id="extractOutput"><span class="placeholder">Extracted data will appear here...</span></pre>
+        </div>
+      </section>
+
+      <!-- Data Terminal Panel -->
+      <section id="terminal" class="panel">
+        <div class="terminal-layout">
+          <div class="card terminal-input-card">
+            <h2>CSV Data Input</h2>
+            <p class="card-desc">Paste raw CSV or upload a file</p>
+            <div class="csv-input-row">
+              <textarea id="csvInput" placeholder="Paste CSV data here...&#10;col1,col2,col3&#10;1,2,3&#10;4,5,6"></textarea>
+              <div class="upload-csv">
+                <input type="file" id="csvFileInput" accept=".csv" hidden>
+                <button class="btn secondary" id="uploadCsvBtn">Upload CSV</button>
+              </div>
+            </div>
+            <div class="command-row">
+              <label>Command:</label>
+              <input type="text" id="commandInput" placeholder="e.g. head, describe, linear regression on X vs Y, plot histogram of Z">
+              <button class="btn primary" id="executeBtn">Execute</button>
+            </div>
+          </div>
+
+          <div class="card terminal-output-card">
+            <h2>Terminal Output</h2>
+            <div class="output-tabs">
+              <button class="output-tab active" data-output="text">Text</button>
+              <button class="output-tab" data-output="chart">Chart</button>
+            </div>
+            <pre id="terminalOutput"><span class="placeholder">Results will appear here...</span></pre>
+            <div id="chartContainer" class="chart-container hidden">
+              <canvas id="chartCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
