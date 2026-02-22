@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const cors = require('cors')
   const PYTHON_SERVICE_API = 'http://localhost:5001'; // Python langextract_service.py
   const NODE_API = 'http://localhost:3001/api'; // Node.js backend for other operations
+  /\.vercel\.app$/                  // Optional: allow all Vercel previews
 
   // ---- Tab Navigation ----
   document.querySelectorAll('.tab').forEach(tab => {
