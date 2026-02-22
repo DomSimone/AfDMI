@@ -1,9 +1,0 @@
-node_modules
-.git
-.idea
-parse
-docs-with-umbuzo
-Dockerfile
-deploy_to_docker.bat
-launch_system.bat
-*.log
