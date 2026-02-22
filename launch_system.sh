@@ -1,106 +1,59 @@
-@echo off
-setlocal
+#!/bin/bash
 
-echo Launching ADMI System...
-echo.
+# --- Setup ---
+echo "Launching ADMI System..."
+echo ""
 
-:: Navigate to the project directory
-cd /d "%~dp0"
+# In Linux/Render, the script starts in the project root by default.
+# No need for 'cd /d %~dp0'
 
-:: --- Find Python Executable ---
-echo [1/4] Looking for Python executable...
-set "PYTHON_EXE="
+# --- 1/4 Find Python ---
+# On Render, the command is usually 'python' or 'python3'
+if command -v python3 &>/dev/null; then
+    PYTHON_EXE="python3"
+elif command -v python &>/dev/null; then
+    PYTHON_EXE="python"
+else
+    echo "ERROR: Python not found."
+    exit 1
+fi
+echo "[1/4] Found Python: $PYTHON_EXE"
 
-:: Check if 'py' or 'python' is already in PATH
-where py >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    set "PYTHON_EXE=py"
-    echo      Found 'py' launcher in PATH.
-    goto InstallPythonDeps
-)
+# --- 2/4 Install Python Dependencies ---
+echo ""
+echo "[2/4] Installing Python dependencies..."
+$PYTHON_EXE -m pip install -r requirements.txt
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to install Python dependencies."
+    exit 1
+fi
 
-where python >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    set "PYTHON_EXE=python"
-    echo      Found 'python' in PATH.
-    goto InstallPythonDeps
-)
+# --- 3/4 Install Node.js Dependencies ---
+echo ""
+echo "[3/4] Installing Node.js dependencies..."
+if [ -f "package.json" ]; then
+    npm install
+    if [ $? -ne 0 ]; then
+        echo "ERROR: npm install failed."
+        exit 1
+    fi
+else
+    echo "package.json not found. Skipping npm install."
+fi
 
-:: If not in PATH, search common installation directories
-echo      'py' or 'python' not found in PATH. Searching common directories...
-for /d %%d in (C:\Python3*, %LOCALAPPDATA%\Programs\Python\Python3*) do (
-    if exist "%%d\python.exe" (
-        set "PYTHON_EXE="%%d\python.exe""
-        echo      Found Python at: %PYTHON_EXE%
-        goto InstallPythonDeps
-    )
-)
+# --- 4/4 Start Services ---
+echo ""
+echo "[4/4] Starting services..."
 
-:: If still not found, exit with an error
-if not defined PYTHON_EXE (
-    echo.
-    echo ERROR: Python executable not found.
-    echo Please install Python from https://www.python.org/downloads/
-    echo IMPORTANT: During installation, make sure to check the box "Add Python to PATH".
-    echo.
-    pause
-    exit /b 1
-)
+# IMPORTANT: Render can only run ONE persistent process per Web Service.
+# To run two services, we run the first one in the background using '&'.
 
-:InstallPythonDeps
-:: --- Install Python Dependencies ---
-echo.
-echo [2/4] Installing Python dependencies...
-%PYTHON_EXE% -m pip install -r requirements.txt
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo ERROR: Failed to install Python dependencies using pip.
-    echo The command window will pause so you can see the error from pip.
-    echo.
-    pause
-    exit /b 1
-)
-echo      Python dependencies installed successfully.
+echo "Starting Python LangExtract Service..."
+$PYTHON_EXE workflows/langextract_service.py & 
 
-:: --- Install Node.js Dependencies ---
-echo.
-echo [3/4] Installing Node.js dependencies...
-IF EXIST package.json (
-    call npm install
-    IF %ERRORLEVEL% NEQ 0 (
-        echo npm install failed. Please check your Node.js installation and try again.
-        pause
-        exit /b %ERRORLEVEL%
-    )
-    echo      Node.js dependencies installed successfully.
-) ELSE (
-    echo      package.json not found. Skipping npm install.
-)
+# Give the Python service a moment to bind to its port
+sleep 3
 
-:: --- Start Services ---
-echo.
-echo [4/4] Starting services...
-
-echo      Starting Python LangExtract Service...
-:: FIX: Use cmd /k to keep the window open, even if the script fails, so you can see the error.
-start "ADMI Python Service" cmd /k ""%PYTHON_EXE%" workflows/langextract_service.py"
-echo      (A new window should open for the Python service. It will now stay open.)
-timeout /t 3 >nul
-
-echo      Starting Node.js backend...
-start "ADMI Node Backend" cmd /k "node workflows/main.js"
-echo      (A new window should open for the Node.js backend)
-timeout /t 2 >nul
-
-echo.
-echo --- ADMI System Launched ---
-echo.
-echo Please check the "ADMI Python Service" window.
-echo If it shows an error, the service has failed. Please report the error message.
-echo If it shows "Starting Python LangExtract Server...", it is running correctly.
-echo.
-
-start index.html
-
-endlocal
-pause
+echo "Starting Node.js backend..."
+# The last command must stay in the foreground so the Render service doesn't "finish" and stop.
+node workflows/main.js
