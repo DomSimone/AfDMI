@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@remix-run/dev",
+    "@remix-run/dev": "latest",
     "bcryptjs": "^3.0.3",
     "busboy": "^1.6.0",
     "jsonwebtoken": "^9.0.2"
