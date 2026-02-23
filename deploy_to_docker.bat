@@ -192,9 +192,9 @@ echo.
 echo Container 'admi-app' is running in Docker Desktop.
 echo.
 echo Services:
-echo   - Node.js Backend:    https://afdmi-123.onrender.com:5001
-echo   - Python Extraction:  https://afdmi-123.onrender.com:5001
-echo   - Frontend:           https://afdmi-123.onrender.com:5001
+echo   - Node.js Backend:    https://afdmi-123.onrender.com/process
+echo   - Python Extraction:  https://afdmi-123.onrender.com/process
+echo   - Frontend:           https://afdmi-123.onrender.com/process
 echo.
 echo Docker Desktop Commands:
 echo   - Open Docker Desktop to manage containers
@@ -220,5 +220,6 @@ start https://afdmi-123.onrender.com
 
 endlocal
 pause
+
 
 
