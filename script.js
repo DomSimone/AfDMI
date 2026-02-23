@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // 4. AI EXTRACTION ENGINE (PORT 5001)
+    // 4. AI EXTRACTION ENGINE (PORT 0000)
     // ============================================================
     if (startIngestionBtn) {
         startIngestionBtn.addEventListener('click', async () => {
@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${PYTHON_SERVICE_API}/health`);
             if (res.ok) {
-                statusEl.innerHTML = '<span class="status-online">● Production Service Connected (Port 5001)</span>';
+                statusEl.innerHTML = '<span class="status-online">● Production Service Connected (Port 0000)</span>';
             } else {
                 throw new Error();
             }
