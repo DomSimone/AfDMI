@@ -166,7 +166,7 @@ echo.
 echo [7/7] Testing service connectivity...
 echo       Testing Node.js backend...
 timeout /t 2 /nobreak >nul
-curl -s http://localhost:3001/ >nul 2>&1
+curl -s https://afdmi-123.onrender.com:5001/process/ >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     echo         ✓ Node.js backend is responding
 ) else (
@@ -176,7 +176,7 @@ if %ERRORLEVEL% equ 0 (
 
 echo       Testing Python extraction service...
 timeout /t 2 /nobreak >nul
-curl -s http://localhost:5001/health >nul 2>&1
+curl -s https://afdmi-123.onrender.com:5001/process/health >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     echo         ✓ Python extraction service is responding
 ) else (
@@ -192,9 +192,9 @@ echo.
 echo Container 'admi-app' is running in Docker Desktop.
 echo.
 echo Services:
-echo   - Node.js Backend:    http://localhost:3001
-echo   - Python Extraction:  http://localhost:5001
-echo   - Frontend:           http://localhost:3001/index.html
+echo   - Node.js Backend:    https://afdmi-123.onrender.com:5001
+echo   - Python Extraction:  https://afdmi-123.onrender.com:5001
+echo   - Frontend:           https://afdmi-123.onrender.com:5001
 echo.
 echo Docker Desktop Commands:
 echo   - Open Docker Desktop to manage containers
@@ -216,7 +216,8 @@ start "" "%DOCKER_DESKTOP%"
 
 :: Wait a moment then open browser
 timeout /t 3 /nobreak >nul
-start http://localhost:3001/index.html
+start https://afdmi-123.onrender.com
 
 endlocal
 pause
+
