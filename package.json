@@ -6,6 +6,6 @@
     "jsonwebtoken": "^9.0.2"
   },
   "scripts": {
-    "build": "npx react-router build"
+    "build": "react-router build"
   }
 }
