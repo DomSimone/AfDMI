@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ingestionStatus.innerHTML = '<b style="color:red;">Upload failed.</b>';
         }
     }
+}
 
     // 2. Document Extraction (Connected to Render)
     else if (reqUrl.pathname === '/api/documents/extract' && req.method === 'POST') {
