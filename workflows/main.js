@@ -2,7 +2,7 @@
 // Open a terminal in the project root directory and run:
 // npm install busboy bcryptjs jsonwebtoken
 // node workflows/main.js
-// The server will start on http://localhost:3001.
+// The server will start on https://afdmi-123.onrender.com/process.
 
 const http = require('http');
 const https = require('https');
@@ -26,7 +26,7 @@ const DEEPSEEK_MODEL = "deepseek-chat";
 
 // --- Python LangExtract Service Configuration ---
 // UPDATED: Points to the production Render service on port 5001
-const PYTHON_SERVICE_URL = `https://afdmi-123.onrender.com:5001/process`; 
+const PYTHON_SERVICE_URL = `https://afdmi-123.onrender.com/process`; 
 
 const server = http.createServer((req, res) => {
     // ... existing header and options logic ...;
