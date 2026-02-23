@@ -40,22 +40,7 @@ const server = http.createServer((req, res) => {
         res.end();
         return;
     }
-
-    // --- API ROUTING ---
-
-    // Root Endpoint
-    if (reqUrl.pathname === '/' && req.method === 'GET') {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('ADMI Backend Server is Running');
-    }
-document.addEventListener('DOMContentLoaded', () => {
-    // Port 0000 per your main.js configuration
-    const NODE_API = 'http://localhost:0000'; 
-    
-    let uploadedFilename = null; 
-    let base64Content = null;
-
-    // --- UI Element Selectors ---
+ // --- UI Element Selectors ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const fileCount = document.getElementById('fileCount');
@@ -64,6 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const extractOutput = document.getElementById('extractOutput');
     const ingestionStatus = document.getElementById('ingestionStatus');
     
+    // --- API ROUTING ---
+
+    // Root Endpoint
+    if (reqUrl.pathname === '/' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ADMI Backend Server is Running');
+    } // <--- THIS WAS LIKELY MISSING OR MISPLACED
+
     // 1. Document Ingestion
     else if (reqUrl.pathname === '/api/documents/ingest' && req.method === 'POST') {
         let bb;
@@ -100,7 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 success: true, 
                 files: filePromises.map(f => ({ filename: f.filename, size: f.size, content: f.content })) 
             }));
-        }); // Properly closed callback
+        });
+        
+        req.pipe(bb);
+    } // Properly closed callback
 
         req.pipe(bb);
     } 
