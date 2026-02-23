@@ -177,8 +177,26 @@
     // CONFIGURATION
     // ============================================================
     
-    const PYTHON_API = 'https://afdmi-123.onrender.com:5001/process';  // Python langextract service
-    const NODE_API = 'https://afdmi-123.onrender.com:5001/process';  // Node.js backend for terminal
+    // UPDATED: Direct connection to production Python service
+    const PYTHON_API = 'https://afdmi-123.onrender.com:5001';
+    const NODE_API = 'http://localhost:3001/api'; 
+
+    // ... rest of the script ...
+
+      if (extractBtn) {
+        extractBtn.addEventListener('click', async () => {
+          // ... validation logic ...
+          try {
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            formData.append('prompt', prompt);
+
+            // Call production Python langextract service directly
+            const response = await fetch(`${PYTHON_API}/process`, {
+              method: 'POST',
+              body: formData
+            });
+            // ... result handling ...
 
     // ============================================================
     // PYDANTIC-STYLE SCHEMA DEFINITIONS (JavaScript mirrors Python)
