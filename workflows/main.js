@@ -236,7 +236,7 @@ const server = http.createServer((req, res) => {
 });
 
 // Set port to 5001 for consistency with your request
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 0000;
 server.listen(PORT, () => {
     console.log(`Node.js Backend listening on port ${PORT}`);
     console.log(`Targeting Python Service at: ${PYTHON_SERVICE_URL}`);
