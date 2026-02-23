@@ -48,7 +48,21 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('ADMI Backend Server is Running');
     }
+document.addEventListener('DOMContentLoaded', () => {
+    // Port 0000 per your main.js configuration
+    const NODE_API = 'http://localhost:0000'; 
+    
+    let uploadedFilename = null; 
+    let base64Content = null;
 
+    // --- UI Element Selectors ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileCount = document.getElementById('fileCount');
+    const extractBtn = document.getElementById('extractBtn');
+    const extractPrompt = document.getElementById('extractPrompt');
+    const extractOutput = document.getElementById('extractOutput');
+    const ingestionStatus = document.getElementById('ingestionStatus');
     // 1. Document Ingestion
     if (dropZone) {
         dropZone.addEventListener('click', () => fileInput.click());
