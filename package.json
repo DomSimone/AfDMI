@@ -4,8 +4,8 @@
     "bcryptjs": "^3.0.3",
     "busboy": "^1.6.0",
     "jsonwebtoken": "^9.0.2"
-  }
+  },
   "scripts": {
-  "build": "vite build"
-}
+    "build": "vite build"
+  }
 }
