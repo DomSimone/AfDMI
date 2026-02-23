@@ -115,16 +115,16 @@ echo       Cleanup complete.
 echo.
 echo [5/5] Running Docker container...
 echo       Starting services:
-echo       - Node.js Backend: http://localhost:3001
-echo       - Python Extraction Service: http://localhost:5001
+echo       - Node.js Backend: https://afdmi-123.onrender.com/process
+echo       - Python Extraction Service: https://afdmi-123.onrender.com/process
 echo       - Multi-file processing enabled (20 files max, 15MB each)
 echo       - Batch processing with parallel execution
 echo.
 
 :: Run container with both ports exposed and interactive mode for debugging
 docker run -d ^
-    -p 3001:3001 ^
-    -p 5001:5001 ^
+    -p https://afdmi-123.onrender.com/process ^
+    -p https://afdmi-123.onrender.com/process ^
     --name admi-container ^
     --restart unless-stopped ^
     admi-app
@@ -166,7 +166,7 @@ echo.
 echo [7/7] Testing service connectivity...
 echo       Testing Node.js backend...
 timeout /t 2 /nobreak >nul
-curl -s https://afdmi-123.onrender.com:5001/process/ >nul 2>&1
+curl -s https://afdmi-123.onrender.com/process/ >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     echo         ✓ Node.js backend is responding
 ) else (
@@ -176,7 +176,7 @@ if %ERRORLEVEL% equ 0 (
 
 echo       Testing Python extraction service...
 timeout /t 2 /nobreak >nul
-curl -s https://afdmi-123.onrender.com:5001/process/health >nul 2>&1
+curl -s https://afdmi-123.onrender.com/process/health >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     echo         ✓ Python extraction service is responding
 ) else (
@@ -220,4 +220,5 @@ start https://afdmi-123.onrender.com
 
 endlocal
 pause
+
 
