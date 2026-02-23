@@ -15,80 +15,121 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Global State for Document Processing
-    let currentFile = null;
+    document.addEventListener('DOMContentLoaded', () => {
+    const PYTHON_SERVICE_API = 'https://afdmi-123.onrender.com';
+    
+    if (window.lucide) { window.lucide.createIcons(); }
 
-    // ============================================================
-    // 2. TAB NAVIGATION LOGIC
-    // ============================================================
+    // --- Tab Navigation ---
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.tab, .panel').forEach(el => el.classList.remove('active'));
             tab.classList.add('active');
             const target = document.getElementById(tab.dataset.tab);
             if (target) target.classList.add('active');
-            
             if (window.lucide) window.lucide.createIcons();
         });
     });
 
-    // ============================================================
-    // 3. DOCUMENT INGESTION (TAB: Documents)
-    // ============================================================
+    // --- Document Ingestion Logic ---
+    let ingestedFiles = [];
+    const dropZone = document.getElementById('dropZone'); // Matches new HTML ID
     const fileInput = document.getElementById('fileInput');
-    const dropzone = document.getElementById('dropzone');
+    const fileList = document.getElementById('fileList');
     const fileCount = document.getElementById('fileCount');
+    const startIngestionBtn = document.getElementById('startIngestionBtn');
+    const processingLogs = document.getElementById('processingLogs');
+    const extractOutput = document.getElementById('extractOutput'); // The container for results
 
-    if (dropzone && fileInput) {
-        dropzone.addEventListener('click', () => fileInput.click());
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
+    }
+
+    function handleFileSelect(files) {
+        const allowed = [...files].filter(f => /\.(pdf|csv)$/i.test(f.name));
+        ingestedFiles = Array.from(allowed);
+        if (fileCount) fileCount.textContent = `${ingestedFiles.length} file(s) selected`;
         
-        // Drag and Drop support
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = 'var(--primary-green)';
-            dropzone.style.background = '#f0f4f0';
-        });
-
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.style.borderColor = '#ccc';
-            dropzone.style.background = 'transparent';
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = '#ccc';
-            if (e.dataTransfer.files.length) {
-                handleFileChange(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFileChange(e.target.files[0]);
-            }
-        });
+        if (fileList) {
+            fileList.innerHTML = ingestedFiles.map(f => `
+                <div class="file-item" style="display:flex; align-items:center; gap:10px; margin-top:5px;">
+                    <i data-lucide="file" style="width:16px;"></i>
+                    <span>${f.name}</span>
+                </div>
+            `).join('');
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
 
-    function handleFileChange(file) {
-        currentFile = file;
-        if (fileCount) fileCount.textContent = file.name;
-        console.log("File selected:", file.name);
-    }
-
-    // ============================================================
-    // 4. AI EXTRACTION LOGIC
-    // ============================================================
-    const extractBtn = document.getElementById('extractBtn');
-    const extractPrompt = document.getElementById('extractPrompt');
-    const extractOutput = document.getElementById('extractOutput');
-    const outputFormat = document.getElementById('outputFormat');
-
-    if (extractBtn) {
-        extractBtn.addEventListener('click', async () => {
-            const promptValue = extractPrompt.value.trim();
+    // --- AI Extraction Execution ---
+    if (startIngestionBtn) {
+        startIngestionBtn.addEventListener('click', async () => {
+            const modelSelect = document.getElementById('modelSelect');
+            if (ingestedFiles.length === 0) return alert('Please upload a file first');
             
-            if (!currentFile) return alert('Please upload a PDF or CSV file first.');
-            if (!promptValue) return alert('Please enter an extraction prompt.');
+            processingLogs.innerHTML = '<div class="loading"><i data-lucide="loader-2" class="spin"></i> Processing...</div>';
+            startIngestionBtn.disabled = true;
+            if (window.lucide) window.lucide.createIcons();
 
+            try {
+                const formData = new FormData();
+                formData.append('file', ingestedFiles[0]);
+                formData.append('prompt', getPromptForModel(modelSelect.value, ""));
+                
+                const response = await fetch(`${PYTHON_SERVICE_API}/process`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                displayResults(result);
+                processingLogs.innerHTML = '<span style="color:green;">Processing complete!</span>';
+            } catch (error) {
+                processingLogs.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+            } finally {
+                startIngestionBtn.disabled = false;
+            }
+        });
+    }
+
+    function getPromptForModel(modelType, params) {
+        const prompts = {
+            'ocr_standard': 'Extract all text content',
+            'ocr_handwriting': 'Extract handwritten text',
+            'data_classification': 'Categorize the data',
+            'auto_clean': 'Normalize and clean data structure'
+        };
+        return prompts[modelType] || 'Extract data';
+    }
+
+    function displayResults(result) {
+        const target = document.getElementById('extractOutput');
+        if (!target) return;
+        const data = result.data || result;
+        target.innerHTML = `<pre style="background:#f4f4f4; padding:10px; overflow:auto;">${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    // Health Check
+    async function checkHealth() {
+        const status = document.getElementById('service-status');
+        if (!status) return;
+        try {
+            const res = await fetch(`${PYTHON_SERVICE_API}/health`);
+            status.innerHTML = res.ok ? '<span style="color: green;">● API Online</span>' : '<span style="color: red;">● API Offline</span>';
+        } catch (e) {
+            status.innerHTML = '<span style="color: red;">● API Connection Error</span>';
+        }
+    }
+    checkHealth();
+});
             // UI Feedback: Loading
             extractOutput.innerHTML = '<div class="loading"><i data-lucide="loader-2" class="spin"></i> AI is processing your document...</div>';
             if (window.lucide) window.lucide.createIcons();
