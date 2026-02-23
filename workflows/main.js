@@ -1,8 +1,6 @@
-// To run this backend server, you need Node.js and several packages installed.
-// Open a terminal in the project root directory and run:
+// To run this backend server: 
 // npm install busboy bcryptjs jsonwebtoken
 // node workflows/main.js
-// The server will start on https://afdmi-123.onrender.com/process.
 
 const http = require('http');
 const https = require('https');
@@ -20,17 +18,19 @@ const chatHistories = {};
 const researchChatHistories = {}; 
 const sessionFiles = []; 
 
-// --- DeepSeek API Configuration ---
+const JWT_SECRET = 'your-super-secret-key';
 const DEEPSEEK_API_KEY = "sk-3c594d38d93947d8b1b6bf93c161857b";
 const DEEPSEEK_MODEL = "deepseek-chat";
 
 // --- Python LangExtract Service Configuration ---
-// UPDATED: Points to the production Render service on port 5001
+// Points to the production Render service
 const PYTHON_SERVICE_URL = `https://afdmi-123.onrender.com/process`; 
 
 const server = http.createServer((req, res) => {
-    // ... existing header and options logic ...;
+    // FIX: Define reqUrl at the very beginning of the request handler
+    const reqUrl = new URL(req.url, `http://${req.headers.host}`);
 
+    // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -154,12 +154,17 @@ const server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk.toString());
         req.on('end', async () => {
-            const { name, email, password } = JSON.parse(body);
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            users[email] = { name, email, password: hashedPassword };
-            res.writeHead(201, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'User created.' }));
+            try {
+                const { name, email, password } = JSON.parse(body);
+                const salt = await bcrypt.genSalt(10);
+                const hashedPassword = await bcrypt.hash(password, salt);
+                users[email] = { name, email, password: hashedPassword };
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: 'User created.' }));
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid signup data.' }));
+            }
         });
     }
 
@@ -167,15 +172,20 @@ const server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk.toString());
         req.on('end', async () => {
-            const { email, password } = JSON.parse(body);
-            const user = users[email];
-            if (!user || !await bcrypt.compare(password, user.password)) {
-                res.writeHead(401, { 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({ error: 'Invalid login' }));
+            try {
+                const { email, password } = JSON.parse(body);
+                const user = users[email];
+                if (!user || !await bcrypt.compare(password, user.password)) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'Invalid login' }));
+                }
+                const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ token, name: user.name }));
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid login data.' }));
             }
-            const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ token, name: user.name }));
         });
     }
 
@@ -184,28 +194,38 @@ const server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => body += chunk.toString());
         req.on('end', async () => {
-            const { message, userId = 'default' } = JSON.parse(body);
-            if (!researchChatHistories[userId]) researchChatHistories[userId] = [];
-            researchChatHistories[userId].push({ role: 'user', content: message });
+            try {
+                const { message, userId = 'default' } = JSON.parse(body);
+                if (!researchChatHistories[userId]) researchChatHistories[userId] = [];
+                researchChatHistories[userId].push({ role: 'user', content: message });
 
-            const dsOptions = {
-                hostname: 'api.deepseek.com',
-                path: '/v1/chat/completions',
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` }
-            };
+                const dsOptions = {
+                    hostname: 'api.deepseek.com',
+                    path: '/v1/chat/completions',
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` }
+                };
 
-            const dsReq = https.request(dsOptions, (dsRes) => {
-                let data = '';
-                dsRes.on('data', d => data += d);
-                dsRes.on('end', () => {
-                    const reply = JSON.parse(data).choices[0].message.content;
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ reply }));
+                const dsReq = https.request(dsOptions, (dsRes) => {
+                    let data = '';
+                    dsRes.on('data', d => data += d);
+                    dsRes.on('end', () => {
+                        try {
+                            const reply = JSON.parse(data).choices[0].message.content;
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ reply }));
+                        } catch (e) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'API parse error' }));
+                        }
+                    });
                 });
-            });
-            dsReq.write(JSON.stringify({ model: DEEPSEEK_MODEL, messages: researchChatHistories[userId] }));
-            dsReq.end();
+                dsReq.write(JSON.stringify({ model: DEEPSEEK_MODEL, messages: researchChatHistories[userId] }));
+                dsReq.end();
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid assistant request.' }));
+            }
         });
     }
 
@@ -215,7 +235,9 @@ const server = http.createServer((req, res) => {
     }
 });
 
+// Set port to 5001 for consistency with your request
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-    console.log(`Backend server is running on port ${PORT}`);
+    console.log(`Node.js Backend listening on port ${PORT}`);
+    console.log(`Targeting Python Service at: ${PYTHON_SERVICE_URL}`);
 });
