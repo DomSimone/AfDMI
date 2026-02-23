@@ -41,34 +41,16 @@
     <section id="documents" class="panel active">
       <div class="panel-grid">
         <div class="card upload-card">
-  <h2><i data-lucide="upload"></i> Document Ingestion</h2>
-  <p class="card-desc">Upload PDF or CSV files for AI-powered extraction</p>
-  
-  <div class="dropzone" id="dropZone">
-    <input type="file" id="fileInput" accept=".pdf,.csv" hidden>
-    <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: var(--primary-green); margin-bottom: 10px;"></i>
-    <span class="dropzone-text">Drop files here or click to browse</span>
-    <span id="fileCount" class="dropzone-count">No file selected</span>
-  </div>
-  <div class="file-list" id="fileList"></div>
-
-  <div class="model-selection" style="margin-top: 15px;">
-    <label for="modelSelect">Select AI Model:</label>
-    <select id="modelSelect" class="full-width">
-      <option value="ocr_standard">Standard OCR</option>
-      <option value="ocr_handwriting">Handwriting Extraction</option>
-      <option value="data_classification">Data Classification</option>
-      <option value="auto_clean">Auto-Clean & Normalize</option>
-    </select>
-    <input type="hidden" id="modelParams" value=""> 
-    <input type="radio" name="dataSource" value="file" checked style="display:none;">
-  </div>
-
-  <button class="btn primary" id="startIngestionBtn" style="width: 100%; margin-top: 15px;">
-    <i data-lucide="play"></i> Start Ingestion
-  </button>
-  <div id="processingLogs" style="font-size: 0.8em; margin-top: 10px;"></div>
-</div>  
+     <h2><i data-lucide="upload"></i> Document Ingestion</h2>
+          <p class="card-desc">Upload PDF or CSV files for AI-powered extraction</p>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" accept=".pdf,.csv" hidden>
+            <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: var(--primary-green); margin-bottom: 10px;"></i>
+            <span class="dropzone-text">Drop files here or click to browse</span>
+            <span class="dropzone-count" id="fileCount">No file selected</span>
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
         <div class="card extract-card">
           <h2><i data-lucide="sparkles"></i> AI-Powered Extraction</h2>
           <p class="card-desc">Specify fields to extract (e.g., "Author, Title, Date")</p>
