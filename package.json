@@ -6,6 +6,7 @@
     "jsonwebtoken": "^9.0.2"
   },
   "scripts": {
-    "build": "vite build"
+  "build": "remix vite:build", 
+  "start": "remix-serve ./build/server/index.js"
   }
 }
