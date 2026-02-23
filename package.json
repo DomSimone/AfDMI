@@ -1,12 +1,16 @@
 {
-  "dependencies": {
-    "@remix-run/node": "latest",
-    "bcryptjs": "^3.0.3",
-    "busboy": "^1.6.0",
-    "jsonwebtoken": "^9.0.2"
-  },
   "scripts": {
-  "build": "remix vite:build", 
-  "start": "remix-serve ./build/server/index.js"
+    "dev": "remix vite:dev",
+    "build": "remix vite:build",
+    "start": "remix-serve ./build/server/index.js"
+  },
+  "dependencies": {
+    "@remix-run/dev": "latest",
+    "@remix-run/node": "latest",
+    "@remix-run/react": "latest",
+    "@remix-run/serve": "latest",
+    "isbot": "latest",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   }
 }
