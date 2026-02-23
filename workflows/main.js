@@ -68,17 +68,15 @@ const server = http.createServer((req, res) => {
         }
 
         const filePromises = [];
-        bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        bb.on('file', (fieldname, file, info) => {
+            const { filename, mimeType } = info;
             const chunks = [];
             file.on('data', (chunk) => chunks.push(chunk));
             file.on('end', () => {
-                let safeFilename = typeof filename === 'string' ? filename : (filename?.filename || "unknown_file");
-                safeFilename = path.basename(safeFilename);
-
                 const buffer = Buffer.concat(chunks);
                 const fileData = {
-                    filename: safeFilename,
-                    mimetype: mimetype,
+                    filename: path.basename(filename),
+                    mimetype: mimeType,
                     content: buffer.toString('base64'),
                     size: buffer.length
                 };
@@ -91,12 +89,9 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ 
                 success: true, 
-                files: filePromises.map(f => ({ filename: f.filename, size: f.size, content: f.content })) 
+                files: filePromises.map(f => ({ filename: f.filename, size: f.size })) 
             }));
-        });
-        
-        req.pipe(bb);
-    } // Properly closed callback
+        }); // Correctly closed bb.on('finish')
 
         req.pipe(bb);
     } 
@@ -107,11 +102,9 @@ const server = http.createServer((req, res) => {
         req.on('data', chunk => body += chunk.toString());
         req.on('end', async () => {
             try {
-                const parsedBody = JSON.parse(body);
-                const { documentContent, prompt, outputFormat, filename } = parsedBody;
+                const { documentContent, prompt, filename } = JSON.parse(body);
                 let buffer;
-                let safeFilename = filename || "document.pdf";
-
+                
                 if (documentContent) {
                     buffer = Buffer.from(documentContent, 'base64');
                 } else if (filename) {
@@ -126,29 +119,19 @@ const server = http.createServer((req, res) => {
 
                 const formData = new FormData();
                 const blob = new Blob([buffer], { type: 'application/pdf' });
-                formData.append('file', blob, safeFilename);
+                formData.append('file', blob, filename || "doc.pdf");
                 formData.append('prompt', prompt || 'Extract data');
 
-                try {
-                    const pythonServiceRes = await fetch(PYTHON_SERVICE_URL, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    const pythonResult = await pythonServiceRes.json();
-                    const data = pythonResult.extractions || pythonResult.data || pythonResult;
-                    
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ data: data, outputFormat: outputFormat }));
-                } catch (fetchError) {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Python Service Unreachable' }));
-                }
+                const pythonRes = await fetch(PYTHON_SERVICE_URL, { method: 'POST', body: formData });
+                const result = await pythonRes.json();
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ data: result.extractions || result.data || result }));
             } catch (e) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Internal Server Error' }));
             }
-        }); // Properly closed req.on callback
+        }); // Correctly closed req.on('end')
     }// This closes the 'else if' for extraction
 
     // 3. User Authentication
