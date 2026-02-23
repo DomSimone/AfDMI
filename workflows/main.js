@@ -50,104 +50,106 @@ const server = http.createServer((req, res) => {
     }
 
     // 1. Document Ingestion
-    else if (reqUrl.pathname === '/api/documents/ingest' && req.method === 'POST') {
-        let bb;
+    if (dropZone) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
+        });
+    }
+
+    fileInput?.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    async function handleFiles(files) {
+        if (files.length === 0) return;
+        const file = files[0];
+        fileCount.textContent = `Selected: ${file.name}`;
+        
+        // Immediate Ingestion to Backend
+        const formData = new FormData();
+        formData.append('file', file);
+
+        ingestionStatus.innerHTML = '<i>Uploading to server...</i>';
+
         try {
-            bb = busboy({ headers: req.headers });
-        } catch (err) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({ error: 'Invalid upload request.' }));
-        }
-
-        const filePromises = [];
-        bb.on('file', (fieldname, file, filename, encoding, mimetype) => {
-            const chunks = [];
-            file.on('data', (chunk) => chunks.push(chunk));
-            file.on('end', () => {
-                let safeFilename = typeof filename === 'string' ? filename : (filename?.filename || "unknown_file");
-                safeFilename = path.basename(safeFilename);
-
-                const buffer = Buffer.concat(chunks);
-                const fileData = {
-                    filename: safeFilename,
-                    mimetype: mimetype,
-                    content: buffer.toString('base64'),
-                    size: buffer.length
-                };
-                sessionFiles.push(fileData);
-                filePromises.push(fileData);
+            const response = await fetch(`${NODE_API}/api/documents/ingest`, {
+                method: 'POST',
+                body: formData
             });
-        });
-
-        bb.on('finish', () => {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ 
-                success: true, 
-                files: filePromises.map(f => ({ filename: f.filename, size: f.size, content: f.content })) 
-            }));
-        });
-        req.pipe(bb);
-    }
-
-    // 2. Document Extraction (Connected to Render)
-    else if (reqUrl.pathname === '/api/documents/extract' && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => body += chunk.toString());
-        req.on('end', async () => {
-            try {
-                const { documentContent, prompt, outputFormat, filename } = JSON.parse(body);
-                let buffer;
-                let safeFilename = filename || "document.pdf";
-
-                if (documentContent) {
-                    buffer = Buffer.from(documentContent, 'base64');
-                } else if (filename) {
-                    const found = sessionFiles.find(f => f.filename === filename);
-                    if (found) buffer = Buffer.from(found.content, 'base64');
-                }
-
-                if (!buffer) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ error: 'File not found.' }));
-                }
-
-                // Prepare Multi-part form data for the Python Service
-                const formData = new FormData();
-                const blob = new Blob([buffer], { type: 'application/pdf' });
-                formData.append('file', blob, safeFilename);
-                formData.append('prompt', prompt || 'Extract data');
-
-                try {
-                    const pythonServiceRes = await fetch(PYTHON_SERVICE_URL, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    const pythonResult = await pythonServiceRes.json();
-
-                    if (!pythonServiceRes.ok) throw new Error(pythonResult.error || 'Python service failed');
-
-                    const data = pythonResult.extractions || pythonResult.data || pythonResult;
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ data: data, outputFormat: outputFormat }));
-
-                } catch (fetchError) {
-                    console.error("Fetch Error:", fetchError.message);
-                    // Fallback to Mock
-                    const mockRes = mockExtractFromDocuments({
-                        files: [{ fileName: safeFilename, buffer: buffer, mimetype: 'application/pdf' }],
-                        prompt: prompt,
-                        outputFormat: outputFormat || 'json'
-                    });
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ data: mockRes.data, warning: "Fallback triggered." }));
-                }
-            } catch (e) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Internal Error' }));
+            const result = await response.json();
+            
+            if (result.success) {
+                // Store file reference for extraction step
+                uploadedFilename = result.files[0].filename;
+                base64Content = result.files[0].content;
+                ingestionStatus.innerHTML = '<b style="color:green;">✓ File Ready</b>';
             }
-        });
+        } catch (err) {
+            ingestionStatus.innerHTML = '<b style="color:red;">Upload failed.</b>';
+        }
     }
+
+    //  2. AI Extraction Step 
+    extractBtn?.addEventListener('click', async () => {
+        if (!uploadedFilename) return alert("Please upload a document first.");
+        
+        const prompt = extractPrompt.value || "Extract structured data";
+        const format = document.getElementById('outputFormat')?.value || 'json';
+
+        extractOutput.innerHTML = '<div class="loading">Processing with AI...</div>';
+
+        try {
+            const response = await fetch(`${NODE_API}/api/documents/extract`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: uploadedFilename,
+                    documentContent: base64Content,
+                    prompt: prompt,
+                    outputFormat: format
+                })
+            });
+
+            const result = await response.json();
+            renderResults(result.data);
+        } catch (err) {
+            extractOutput.innerHTML = `<div class="error">Extraction Error: ${err.message}</div>`;
+        }
+    });
+
+    function renderResults(data) {
+        if (!data) return;
+        // Check if data is an array (table format) or object
+        if (Array.isArray(data)) {
+            let html = '<table class="result-table"><thead><tr>';
+            Object.keys(data[0]).forEach(key => html += `<th>${key}</th>`);
+            html += '</tr></thead><tbody>';
+            data.forEach(row => {
+                html += '<tr>';
+                Object.values(row).forEach(val => html += `<td>${val}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            extractOutput.innerHTML = html;
+        } else {
+            extractOutput.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+    }
+
+    // Health Check for the Node backend
+    async function checkStatus() {
+        try {
+            const res = await fetch(NODE_API);
+            const statusBox = document.getElementById('service-status');
+            if (res.ok && statusBox) {
+                statusBox.innerHTML = '<span style="color:green">● System Online</span>';
+            }
+        } catch (e) {}
+    }
+    checkStatus();
+});
 
     // 3. User Authentication
     else if (reqUrl.pathname === '/api/signup' && req.method === 'POST') {
