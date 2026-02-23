@@ -1687,11 +1687,11 @@ def export_csv():
 # ============================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PYTHON_PORT", 5001))
+    port = int(os.environ.get("https://afdmi-123.onrender.com:5001/process"))
     print(f"\n{'='*60}")
     print(f"Document Extraction Service")
     print(f"Features: Chapter/Section Detection, Prompt Classification")
     print(f"Port: {port}")
     print(f"Backends: PyMuPDF={HAS_PYMUPDF}, pdfplumber={HAS_PDFPLUMBER}")
     print(f"{'='*60}\n")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='https://afdmi-123.onrender.com:5001/process', port=5001, debug=True)
