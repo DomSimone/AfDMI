@@ -105,84 +105,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    //  2. AI Extraction Step 
-    extractBtn?.addEventListener('click', async () => {
-        if (!uploadedFilename) return alert("Please upload a document first.");
-        
-        const prompt = extractPrompt.value || "Extract structured data";
-        const format = document.getElementById('outputFormat')?.value || 'json';
-
-        extractOutput.innerHTML = '<div class="loading">Processing with AI...</div>';
-
-        try {
-            const response = await fetch(`${NODE_API}/api/documents/extract`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename: uploadedFilename,
-                    documentContent: base64Content,
-                    prompt: prompt,
-                    outputFormat: format
-                })
-            });
-
-            const result = await response.json();
-            renderResults(result.data);
-        } catch (err) {
-            extractOutput.innerHTML = `<div class="error">Extraction Error: ${err.message}</div>`;
-        }
-    });
-
-    function renderResults(data) {
-        if (!data) return;
-        // Check if data is an array (table format) or object
-        if (Array.isArray(data)) {
-            let html = '<table class="result-table"><thead><tr>';
-            Object.keys(data[0]).forEach(key => html += `<th>${key}</th>`);
-            html += '</tr></thead><tbody>';
-            data.forEach(row => {
-                html += '<tr>';
-                Object.values(row).forEach(val => html += `<td>${val}</td>`);
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-            extractOutput.innerHTML = html;
-        } else {
-            extractOutput.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        }
-    }
-
-    // Health Check for the Node backend
-    async function checkStatus() {
-        try {
-            const res = await fetch(NODE_API);
-            const statusBox = document.getElementById('service-status');
-            if (res.ok && statusBox) {
-                statusBox.innerHTML = '<span style="color:green">● System Online</span>';
-            }
-        } catch (e) {}
-    }
-    checkStatus();
-});
-
-    // 3. User Authentication
-    else if (reqUrl.pathname === '/api/signup' && req.method === 'POST') {
+    // 2. Document Extraction (Connected to Render)
+    else if (reqUrl.pathname === '/api/documents/extract' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk.toString());
         req.on('end', async () => {
             try {
-                const { name, email, password } = JSON.parse(body);
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash(password, salt);
-                users[email] = { name, email, password: hashedPassword };
-                res.writeHead(201, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: 'User created.' }));
+                const { documentContent, prompt, outputFormat, filename } = JSON.parse(body);
+                let buffer;
+                let safeFilename = filename || "document.pdf";
+
+                if (documentContent) {
+                    buffer = Buffer.from(documentContent, 'base64');
+                } else if (filename) {
+                    const found = sessionFiles.find(f => f.filename === filename);
+                    if (found) buffer = Buffer.from(found.content, 'base64');
+                }
+
+                if (!buffer) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'File not found.' }));
+                }
+
+                const formData = new FormData();
+                const blob = new Blob([buffer], { type: 'application/pdf' });
+                formData.append('file', blob, safeFilename);
+                formData.append('prompt', prompt || 'Extract data');
+
+                try {
+                    const pythonServiceRes = await fetch(PYTHON_SERVICE_URL, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const pythonResult = await pythonServiceRes.json();
+                    if (!pythonServiceRes.ok) throw new Error(pythonResult.error || 'Python service failed');
+
+                    const data = pythonResult.extractions || pythonResult.data || pythonResult;
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ data: data, outputFormat: outputFormat }));
+
+                } catch (fetchError) {
+                    console.error("Fetch Error:", fetchError.message);
+                    const mockRes = mockExtractFromDocuments({
+                        files: [{ fileName: safeFilename, buffer: buffer, mimetype: 'application/pdf' }],
+                        prompt: prompt,
+                        outputFormat: outputFormat || 'json'
+                    });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ data: mockRes.data, warning: "Fallback triggered." }));
+                }
             } catch (e) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Invalid signup data.' }));
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Internal Error' }));
             }
-        });
-    }
+        }); // This closes req.on('end')
+    } // This closes the 'else if' for extraction
+
+    // 3. User Authentication
+    else if (reqUrl.pathname === '/api/signup' && req.method === 'POST') {
+        // ... rest of your code ...
 
     else if (reqUrl.pathname === '/api/login' && req.method === 'POST') {
         let body = '';
