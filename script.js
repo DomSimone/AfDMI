@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fixed the ReferenceError by ensuring these are globally accessible within the scope.
     const PYTHON_SERVICE_API = 'https://afdmi-123.onrender.com';
     const NODE_API = 'https://afdmi-123.onrender.com'; 
-    const API = NODE_API; // Alias used in legacy functions
 
     // Initialize Lucide Icons if available
     if (window.lucide) {
