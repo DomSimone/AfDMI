@@ -25,11 +25,11 @@ const DEEPSEEK_API_KEY = "sk-3c594d38d93947d8b1b6bf93c161857b";
 const DEEPSEEK_MODEL = "deepseek-chat";
 
 // --- Python LangExtract Service Configuration ---
-// UPDATED: Changed from localhost to the production Render URL with HTTPS
-const PYTHON_SERVICE_URL = `https://afdmi-123.onrender.com/process`; 
+// UPDATED: Points to the production Render service on port 5001
+const PYTHON_SERVICE_URL = `https://afdmi-123.onrender.com:5001/process`; 
 
 const server = http.createServer((req, res) => {
-    const reqUrl = new URL(req.url, `http://${req.headers.host}`);
+    // ... existing header and options logic ...;
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
