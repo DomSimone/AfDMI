@@ -1687,11 +1687,10 @@ def export_csv():
 # ============================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("https://afdmi-123.onrender.com/process"))
-    print(f"\n{'='*60}")
-    print(f"Document Extraction Service")
-    print(f"Features: Chapter/Section Detection, Prompt Classification")
-    print(f"Port: {port}")
-    print(f"Backends: PyMuPDF={HAS_PYMUPDF}, pdfplumber={HAS_PDFPLUMBER}")
-    print(f"{'='*60}\n")
-    app.run(host='0000', port=port, debug=True)
+    # 1. Get the dynamic port from Render
+    port = int(os.environ.get("PORT", 5001))
+    
+    # 2. Bind to 0.0.0.0 (required for Docker/Render)
+    # 3. Use the port variable we just defined
+    print(f"Service starting on port {port}...")
+    app.run(host='0.0.0.0', port=port)
