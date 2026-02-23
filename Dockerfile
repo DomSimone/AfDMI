@@ -50,11 +50,12 @@ RUN chmod +x start.sh
 RUN mkdir -p temp_uploads
 
 # Expose the ports for both Node.js and Python services
-EXPOSE 5001
-EXPOSE 5001
+EXPOSE 0.0.0.0
+EXPOSE 0.0.0.0
 
 # Define the command to run the start script
 CMD ["./start.sh"]
+
 
 
 
