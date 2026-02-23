@@ -20,7 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (window.lucide) { window.lucide.createIcons(); }
 
-    // --- Tab Navigation ---
+        // Ingest to Node.js backend
+    const res = await fetch('/api/documents/ingest', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+        window.currentUploadedFile = data.files[0].filename; // Store for extraction
+        document.getElementById('fileCount').textContent = `Ready: ${file.name}`;
+    }
+}
+
+                              // --- Tab Navigation ---
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.tab, .panel').forEach(el => el.classList.remove('active'));
@@ -33,23 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Document Ingestion Logic ---
     let ingestedFiles = [];
-    const dropZone = document.getElementById('dropZone'); // Matches new HTML ID
+    const dropZone = document.getElementById('dropzone'); // Match lowercase if that's in your HTML
     const fileInput = document.getElementById('fileInput');
+    const extractBtn = document.getElementById('extractBtn');
     const fileList = document.getElementById('fileList');
     const fileCount = document.getElementById('fileCount');
     const startIngestionBtn = document.getElementById('startIngestionBtn');
     const processingLogs = document.getElementById('processingLogs');
     const extractOutput = document.getElementById('extractOutput'); // The container for results
 
-    if (dropZone && fileInput) {
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            handleFileSelect(e.dataTransfer.files);
-        });
+    if if (dropZone) {
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('active'); };
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        handleIngestion(e.dataTransfer.files[0]);
+    };
+}
         fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
     }
 
