@@ -1,0 +1,118 @@
+﻿AfDMI Ingestion Microservice — Quickstart & Deployment Guide
+Thank you for purchasing the AfDMI Ingestion Microservice. This production-ready, containerized FastAPI service allows you to extract structured data from unstructured documents and export styled Excel reports with zero setup friction.
+What’s Included in the Package
+
+
+
+
+
+
+Plaintext
+afdmi-service/
+├── app/
+│   ├── __init__.py      # App initialization
+│   ├── main.py          # FastAPI routes & endpoints
+│   ├── schemas.py       # Pydantic models & request validation
+│   └── pipeline.py      # Core OCR/LLM ingestion & Excel logic
+├── Dockerfile           # Optimized multi-stage Docker build
+├── docker-compose.yml   # Multi-container orchestration config
+├── requirements.txt     # Python dependency locks
+└── .env.example         # Environment variable template
+
+Quickstart (Local Deployment)
+Prerequisites
+* Docker Desktop installed and running on your machine.
+* An API key for your chosen LLM provider (e.g., OpenAI or Hugging Face, if required by your pipeline).
+1. Configure Environment Variables
+Copy .env.example to create your local .env file:
+
+
+
+
+
+
+Bash
+cp .env.example .env
+
+Open .env and fill in your credentials:
+
+
+
+
+
+
+Code snippet
+PORT=8000
+OPENAI_API_KEY=your_api_key_here
+
+2. Launch with Docker Compose
+Run the following command from the root folder:
+
+
+
+
+
+
+Bash
+docker-compose up --build -d
+
+The service will start in detached mode at http://localhost:8000.
+3. Verify System Health
+Check if the service is running:
+
+
+
+
+
+
+Bash
+curl http://localhost:8000/health
+
+Response: {"status":"healthy","service":"afdmi-ingestion"}
+API Usage & Endpoints
+You can explore and test all endpoints interactively via the built-in Swagger UI at:
+http://localhost:8000/docs
+Key Endpoints
+Endpoint
+	Method
+	Description
+	/health
+	GET
+	Health check and status monitoring.
+	/v1/parse
+	POST
+	Upload a PDF or image; returns structured JSON output.
+	/v1/export/excel
+	POST
+	Upload a PDF or image; streams back a formatted .xlsx file.
+	Example cURL Request (Extract JSON)
+
+
+
+
+
+
+Bash
+curl -X 'POST' \
+ 'http://localhost:8000/v1/parse' \
+ -H 'accept: application/json' \
+ -H 'Content-Type: multipart/form-data' \
+ -F 'file=@/path/to/your/document.pdf'
+
+Cloud Deployment Guide
+Deploying to Render
+1. Push this repository to your private GitHub or GitLab account.
+2. Log into Render and create a New Web Service.
+3. Connect your repository and select Docker as the Runtime environment.
+4. Add your environment variables under the Environment tab.
+5. Click Create Web Service. Render will automatically build the Dockerfile and publish your API.
+Deploying to Railway
+1. Log into Railway and select New Project → Deploy from GitHub repo.
+2. Railway auto-detects the Dockerfile.
+3. Go to Variables and inject the keys defined in your .env file.
+4. Generate a domain under Settings → Networking to expose your public endpoint.
+Maintenance & Customization
+* Custom Pipeline Logic: Modify app/pipeline.py to add custom prompt templates, OCR pre-processing steps, or specialized Pydantic models.
+* Adding Dependencies: Update requirements.txt and rebuild the container (docker-compose up --build).
+Support & Assistance
+For setup help, custom integration requests, or bug reports, feel free to reach out directly through the marketplace contact button on your purchase page.
