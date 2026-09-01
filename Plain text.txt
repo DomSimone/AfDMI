@@ -1,0 +1,10 @@
+afdmi-service/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── schemas.py
+│   └── pipeline.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── .env.example

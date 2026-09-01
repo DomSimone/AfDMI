@@ -1,17 +1,10 @@
-# Document Extraction Service Dependencies
-# Open Source PDF Processing - No LLM Required
-
-# PDF Processing
-PyMuPDF
-pdfplumber
-
-# Web Framework
-Flask
-flask-cors
-werkzeug
-
-# Data Validation
-pydantic
-
-# Optional: Additional PDF backends
-# unstructured  # For complex layouts (requires additional system dependencies)
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+python-multipart>=0.0.9
+pandas>=2.2.0
+openpyxl>=3.1.2
+# Add your specific ingestion packages:
+# docling>=0.1.0
+# instructor>=1.0.0
+# langchain>=0.1.0
